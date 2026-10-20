@@ -11,6 +11,10 @@ function App() {
     setCities((prev) => [...prev, city]);
   };
 
+  const handleRemoveCity = (cityId: number) => {
+    setCities((prev) => prev.filter((city) => city.id !== cityId));
+  };
+
   const touchCities = () => {
     let updatedCities = [...cities];
     updatedCities = updatedCities.map((city) => ({
@@ -34,7 +38,11 @@ function App() {
       <SearchCity handleAddCity={handleAddCity} />
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {cities.map((city) => (
-          <WeatherCard key={city.id} city={city} />
+          <WeatherCard
+            key={city.id}
+            city={city}
+            handleRemoveCity={handleRemoveCity}
+          />
         ))}
       </div>
     </div>

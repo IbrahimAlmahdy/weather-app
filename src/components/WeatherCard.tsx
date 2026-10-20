@@ -4,7 +4,12 @@ import type { WeatherDataAPIResponse } from "../types/WeatherData";
 import { getWeatherCodeDescription } from "../utils/getWeatherCodeDescription";
 import { getWeatherCodeIcon } from "../utils/getWeatherCodeIcon";
 
-function WeatherCard({ city }: { city: CityData }) {
+type Props = {
+  city: CityData;
+  handleRemoveCity: (cityId: number) => void;
+};
+
+function WeatherCard({ city, handleRemoveCity }: Props) {
   const [weather, setWeather] = useState<WeatherDataAPIResponse | null>(null);
 
   const fetchWeather = async () => {
@@ -20,9 +25,17 @@ function WeatherCard({ city }: { city: CityData }) {
   }, [city.updatedAt]);
   return (
     <div className="flex flex-col gap-2 border border-gray-300 rounded-md p-2">
-      <h1>
-        {city.name}, {city.country}
-      </h1>
+      <div className="flex justify-between items-center">
+        <h1>
+          {city.name}, {city.country}
+        </h1>
+        <div
+          onClick={() => handleRemoveCity(city.id)}
+          className="cursor-pointer"
+        >
+          🗑️
+        </div>
+      </div>
 
       <p className="text-4xl font-bold">
         {weather ? Math.round(weather.current_weather.temperature) : "--"}
