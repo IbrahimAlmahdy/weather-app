@@ -51,6 +51,8 @@ function SearchCity({ handleAddCity }: Props) {
               key={result.id}
             >
               {result.name}
+              {result.admin1 ? `, ${result.admin1}` : ""}
+              {result.country ? `, ${result.country}` : ""}
             </div>
           ))}
         </div>
