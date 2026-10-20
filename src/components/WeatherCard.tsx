@@ -12,6 +12,7 @@ type Props = {
 function WeatherCard({ city, handleRemoveCity }: Props) {
   const [weather, setWeather] = useState<WeatherDataAPIResponse | null>(null);
   const [weatherError, setWeatherError] = useState("");
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const { latitude, longitude } = city;
 
   useEffect(() => {
@@ -19,7 +20,7 @@ function WeatherCard({ city, handleRemoveCity }: Props) {
     const fetchWeather = async () => {
       try {
         const response = await fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`,
+          `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,wind_speed_10m,weather_code&temperature_unit=celsius&wind_speed_unit=kmh`,
           { signal: controller.signal },
         );
         if (!response.ok) {
@@ -32,6 +33,7 @@ function WeatherCard({ city, handleRemoveCity }: Props) {
         if (!controller.signal.aborted) {
           setWeather(data);
           setWeatherError("");
+          setLastUpdated(new Date());
         }
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") {
@@ -60,26 +62,36 @@ function WeatherCard({ city, handleRemoveCity }: Props) {
           className="shrink-0 rounded-lg border border-[#294158] bg-[#172940] px-2.5 py-2 text-sm text-slate-400 transition-colors hover:border-red-400/50 hover:bg-red-400/10 hover:text-red-300 focus:outline-none focus:ring-2 focus:ring-sky-400/60"
           aria-label={`Remove ${city.name}`}
         >
-          🗑️
+          <svg
+            className="h-4 w-4"
+            viewBox="0 0 20 20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
+            <path d="m5 5 10 10M15 5 5 15" />
+          </svg>
         </button>
       </div>
 
       <div>
         <div className="flex items-center gap-4">
           <p className="text-5xl font-bold tracking-tight text-white">
-            {weather ? Math.round(weather.current_weather.temperature) : "--"}
-            {weather?.current_weather_units.temperature ?? ""}
+            {weather ? Math.round(weather.current.temperature_2m) : "--"}
+            {weather?.current_units.temperature_2m ?? ""}
           </p>
           <span
             className="text-5xl leading-none"
             aria-label={
               weather
-                ? getWeatherCodeDescription(weather.current_weather.weathercode)
+                ? getWeatherCodeDescription(weather.current.weather_code)
                 : "Weather loading"
             }
           >
             {weather
-              ? getWeatherCodeIcon(weather.current_weather.weathercode)
+              ? getWeatherCodeIcon(weather.current.weather_code)
               : "🌡️"}
           </span>
         </div>
@@ -89,7 +101,7 @@ function WeatherCard({ city, handleRemoveCity }: Props) {
         >
           {weatherError ||
             (weather
-              ? getWeatherCodeDescription(weather.current_weather.weathercode)
+              ? getWeatherCodeDescription(weather.current.weather_code)
               : "Loading weather...")}
         </p>
       </div>
@@ -99,12 +111,12 @@ function WeatherCard({ city, handleRemoveCity }: Props) {
           <span className="text-base" aria-hidden="true">
             💨
           </span>
-          Wind: {weather ? weather.current_weather.windspeed : "--"}{" "}
-          {weather?.current_weather_units.windspeed ?? ""}
+          Wind: {weather ? weather.current.wind_speed_10m : "--"}{" "}
+          {weather?.current_units.wind_speed_10m ?? ""}
         </p>
       </div>
       <p className="mt-auto text-xs text-slate-500">
-        Last updated: {city.updatedAt.toLocaleString()}
+        Last updated: {lastUpdated ? lastUpdated.toLocaleString() : "--"}
       </p>
     </article>
   );

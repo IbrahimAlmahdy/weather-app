@@ -1,11 +1,8 @@
 type CurrentWeather = {
   time: string;
-  interval: number;
-  temperature: number;
-  windspeed: number;
-  winddirection: number;
-  is_day: number;
-  weathercode: number;
+  temperature_2m: number;
+  wind_speed_10m: number;
+  weather_code: number;
 };
 
 /*
@@ -31,12 +28,9 @@ else: Unknown weather
 
 type CurrentWeatherUnits = {
   time: string;
-  interval: string;
-  temperature: string;
-  windspeed: string;
-  winddirection: string;
-  is_day: string;
-  weathercode: string;
+  temperature_2m: string;
+  wind_speed_10m: string;
+  weather_code: string;
 };
 
 export type WeatherDataAPIResponse = {
@@ -47,6 +41,6 @@ export type WeatherDataAPIResponse = {
   timezone: string;
   timezone_abbreviation: string;
   elevation: number;
-  current_weather_units: CurrentWeatherUnits;
-  current_weather: CurrentWeather;
+  current_units: CurrentWeatherUnits;
+  current: CurrentWeather;
 };

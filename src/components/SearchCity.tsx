@@ -98,7 +98,21 @@ function SearchCity({ handleAddCity }: Props) {
               key={result.id}
               role="option"
             >
-              <span className="block font-medium text-white">{result.name}</span>
+              <span className="flex items-center gap-2 font-medium text-white">
+                <svg
+                  className="h-4 w-4 shrink-0 text-sky-400"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18s6-5.07 6-10A6 6 0 0 0 4 8c0 4.93 6 10 6 10Zm0-7a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span>{result.name}</span>
+              </span>
               {(result.admin1 || result.country) && (
                 <span className="mt-0.5 block text-xs text-slate-400">
                   {[result.admin1, result.country].filter(Boolean).join(", ")}
