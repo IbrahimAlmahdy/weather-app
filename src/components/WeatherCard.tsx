@@ -11,52 +11,102 @@ type Props = {
 
 function WeatherCard({ city, handleRemoveCity }: Props) {
   const [weather, setWeather] = useState<WeatherDataAPIResponse | null>(null);
-
-  const fetchWeather = async () => {
-    const response = await fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${city.latitude}&longitude=${city.longitude}&current_weather=true`,
-    );
-    const data: WeatherDataAPIResponse = await response.json();
-    setWeather(data);
-  };
+  const [weatherError, setWeatherError] = useState("");
+  const { latitude, longitude } = city;
 
   useEffect(() => {
+    const controller = new AbortController();
+    const fetchWeather = async () => {
+      try {
+        const response = await fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`,
+          { signal: controller.signal },
+        );
+        if (!response.ok) {
+          throw new Error(
+            `Weather request failed with status ${response.status}`,
+          );
+        }
+
+        const data: WeatherDataAPIResponse = await response.json();
+        if (!controller.signal.aborted) {
+          setWeather(data);
+          setWeatherError("");
+        }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+        if (!controller.signal.aborted) {
+          setWeather(null);
+          setWeatherError("Unable to load weather data.");
+        }
+      }
+    };
+
     fetchWeather();
-  }, [city.updatedAt]);
+    return () => controller.abort();
+  }, [city.updatedAt, latitude, longitude]);
   return (
-    <div className="flex flex-col gap-2 border border-gray-300 rounded-md p-2">
-      <div className="flex justify-between items-center">
-        <h1>
-          {city.name}, {city.country}
-        </h1>
-        <div
+    <article className="flex h-full flex-col gap-5 rounded-xl border border-[#294158] bg-[#111e30] p-5 text-slate-200 shadow-lg shadow-slate-950/10">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h2 className="truncate text-xl font-bold text-white">{city.name}</h2>
+          <p className="mt-1 text-sm text-slate-400">{city.country}</p>
+        </div>
+        <button
+          type="button"
           onClick={() => handleRemoveCity(city.id)}
-          className="cursor-pointer"
+          className="shrink-0 rounded-lg border border-[#294158] bg-[#172940] px-2.5 py-2 text-sm text-slate-400 transition-colors hover:border-red-400/50 hover:bg-red-400/10 hover:text-red-300 focus:outline-none focus:ring-2 focus:ring-sky-400/60"
+          aria-label={`Remove ${city.name}`}
         >
           🗑️
-        </div>
+        </button>
       </div>
 
-      <p className="text-4xl font-bold">
-        {weather ? Math.round(weather.current_weather.temperature) : "--"}
-        {weather?.current_weather_units.temperature ?? ""}
-      </p>
+      <div>
+        <div className="flex items-center gap-4">
+          <p className="text-5xl font-bold tracking-tight text-white">
+            {weather ? Math.round(weather.current_weather.temperature) : "--"}
+            {weather?.current_weather_units.temperature ?? ""}
+          </p>
+          <span
+            className="text-5xl leading-none"
+            aria-label={
+              weather
+                ? getWeatherCodeDescription(weather.current_weather.weathercode)
+                : "Weather loading"
+            }
+          >
+            {weather
+              ? getWeatherCodeIcon(weather.current_weather.weathercode)
+              : "🌡️"}
+          </span>
+        </div>
+        <p
+          className="mt-2 text-sm text-slate-400"
+          role={weatherError ? "alert" : undefined}
+        >
+          {weatherError ||
+            (weather
+              ? getWeatherCodeDescription(weather.current_weather.weathercode)
+              : "Loading weather...")}
+        </p>
+      </div>
 
-      <p className="text-sm">
-        {weather
-          ? getWeatherCodeDescription(weather.current_weather.weathercode)
-          : "Loading weather..."}{" "}
-        {weather ? getWeatherCodeIcon(weather.current_weather.weathercode) : ""}
+      <div className="border-t border-[#294158] pt-4">
+        <p className="flex items-center gap-2 text-sm text-slate-400">
+          <span className="text-base" aria-hidden="true">
+            💨
+          </span>
+          Wind: {weather ? weather.current_weather.windspeed : "--"}{" "}
+          {weather?.current_weather_units.windspeed ?? ""}
+        </p>
+      </div>
+      <p className="mt-auto text-xs text-slate-500">
+        Last updated: {city.updatedAt.toLocaleString()}
       </p>
-
-      <p className="text-sm border border-gray-300 rounded-md p-2">
-        Wind: {weather ? weather.current_weather.windspeed : "--"}{" "}
-        {weather?.current_weather_units.windspeed ?? ""}
-      </p>
-      <p className="text-sm">
-        Last Updated at: {city.updatedAt.toLocaleString()}
-      </p>
-    </div>
+    </article>
   );
 }
 

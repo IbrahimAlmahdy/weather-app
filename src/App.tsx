@@ -15,35 +15,37 @@ function App() {
     setCities((prev) => prev.filter((city) => city.id !== cityId));
   };
 
-  const touchCities = () => {
-    let updatedCities = [...cities];
-    updatedCities = updatedCities.map((city) => ({
-      ...city,
-      updatedAt: new Date(),
-    }));
-    setCities(updatedCities);
-  };
-
   useEffect(() => {
     const interval = setInterval(() => {
-      touchCities();
-    }, 1000); // Update every 1 second
+      setCities((currentCities) => {
+        if (currentCities.length === 0) {
+          return currentCities;
+        }
+
+        return currentCities.map((city) => ({
+          ...city,
+          updatedAt: new Date(),
+        }));
+      });
+    }, 15000);
 
     return () => clearInterval(interval);
-  }, [cities]);
+  }, []);
 
   return (
-    <div className="flex flex-col gap-4 px-8 py-6">
-      <Header />
-      <SearchCity handleAddCity={handleAddCity} />
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {cities.map((city) => (
-          <WeatherCard
-            key={city.id}
-            city={city}
-            handleRemoveCity={handleRemoveCity}
-          />
-        ))}
+    <div className="min-h-screen bg-[#061522] px-4 py-6 sm:px-8 sm:py-8">
+      <div className="mx-auto flex max-w-7xl flex-col gap-6">
+        <Header />
+        <SearchCity handleAddCity={handleAddCity} />
+        <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {cities.map((city) => (
+            <WeatherCard
+              key={city.id}
+              city={city}
+              handleRemoveCity={handleRemoveCity}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

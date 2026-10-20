@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { CityData, CityDataAPIResponse } from "../types/CityData";
 
 type Props = {
@@ -8,21 +8,51 @@ type Props = {
 function SearchCity({ handleAddCity }: Props) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<CityData[]>([]);
+  const [searchError, setSearchError] = useState("");
+  const searchController = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => searchController.current?.abort();
+  }, []);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newQuery = e.target.value;
     setQuery(newQuery);
+    searchController.current?.abort();
+    setSearchError("");
+
     if (e.target.value.length < 3) {
       setResults([]);
       return;
     }
 
+    const controller = new AbortController();
+    searchController.current = controller;
+    const params = new URLSearchParams({ name: newQuery });
+
     const fetchCities = async () => {
-      const response = await fetch(
-        `https://geocoding-api.open-meteo.com/v1/search?name=${newQuery}`,
-      );
-      const data: CityDataAPIResponse = await response.json();
-      setResults(data.results ?? []);
+      try {
+        const response = await fetch(
+          `https://geocoding-api.open-meteo.com/v1/search?${params.toString()}`,
+          { signal: controller.signal },
+        );
+        if (!response.ok) {
+          throw new Error(`City search failed with status ${response.status}`);
+        }
+
+        const data: CityDataAPIResponse = await response.json();
+        if (!controller.signal.aborted) {
+          setResults(data.results ?? []);
+        }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+        if (!controller.signal.aborted) {
+          setResults([]);
+          setSearchError("Unable to search for cities. Please try again.");
+        }
+      }
     };
     fetchCities();
   };
@@ -34,29 +64,47 @@ function SearchCity({ handleAddCity }: Props) {
     });
     setQuery("");
     setResults([]);
+    setSearchError("");
+    searchController.current?.abort();
   };
 
   return (
-    <div>
+    <div className="relative w-full">
       <input
         value={query}
         onChange={handleSearch}
-        className="w-full p-2 border border-gray-300 rounded-md"
+        className="w-full rounded-lg border border-[#294158] bg-[#111e30] px-4 py-3 text-white outline-none placeholder:text-slate-500 focus:border-sky-400 focus:ring-2 focus:ring-sky-400/30"
         type="text"
         placeholder="Search for a city..."
+        aria-label="Search for a city"
+        aria-expanded={results.length > 0}
       />
+      {searchError && (
+        <p className="mt-2 text-sm text-red-300" role="alert">
+          {searchError}
+        </p>
+      )}
       {results.length > 0 && (
-        <div className="flex flex-col gap-2 border border-gray-300 rounded-md p-2">
+        <div
+          className="absolute z-10 mt-2 flex max-h-72 w-full flex-col gap-1 overflow-y-auto rounded-lg border border-[#294158] bg-[#111e30] p-2 shadow-xl shadow-slate-950/30"
+          role="listbox"
+          aria-label="City suggestions"
+        >
           {results.map((result) => (
-            <div
+            <button
+              type="button"
               onClick={() => handleAddCityClick(result)}
-              className="hover:bg-gray-100 cursor-pointer p-1 rounded-md"
+              className="w-full rounded-md px-3 py-2 text-left text-sm text-slate-200 transition-colors hover:bg-[#1b334d] focus:bg-[#1b334d] focus:outline-none"
               key={result.id}
+              role="option"
             >
-              {result.name}
-              {result.admin1 ? `, ${result.admin1}` : ""}
-              {result.country ? `, ${result.country}` : ""}
-            </div>
+              <span className="block font-medium text-white">{result.name}</span>
+              {(result.admin1 || result.country) && (
+                <span className="mt-0.5 block text-xs text-slate-400">
+                  {[result.admin1, result.country].filter(Boolean).join(", ")}
+                </span>
+              )}
+            </button>
           ))}
         </div>
       )}
