@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Header from "./components/Header";
 import SearchCity from "./components/SearchCity";
 import type { CityData } from "./types/CityData";
@@ -10,6 +10,23 @@ function App() {
   const handleAddCity = (city: CityData) => {
     setCities((prev) => [...prev, city]);
   };
+
+  const touchCities = () => {
+    let updatedCities = [...cities];
+    updatedCities = updatedCities.map((city) => ({
+      ...city,
+      updatedAt: new Date(),
+    }));
+    setCities(updatedCities);
+  };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      touchCities();
+    }, 1000); // Update every 1 second
+
+    return () => clearInterval(interval);
+  }, [cities]);
 
   return (
     <div className="flex flex-col gap-4 px-8 py-6">

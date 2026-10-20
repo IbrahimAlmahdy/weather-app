@@ -16,4 +16,5 @@ export type CityData = {
   country_id: number;
   country: string;
   admin1: string;
+  updatedAt: Date;
 };

@@ -5,42 +5,19 @@ import { getWeatherCodeDescription } from "../utils/getWeatherCodeDescription";
 import { getWeatherCodeIcon } from "../utils/getWeatherCodeIcon";
 
 function WeatherCard({ city }: { city: CityData }) {
-  const [weather, setWeatherData] = useState<WeatherDataAPIResponse | null>(
-    null,
-  );
+  const [weather, setWeather] = useState<WeatherDataAPIResponse | null>(null);
+
+  const fetchWeather = async () => {
+    const response = await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${city.latitude}&longitude=${city.longitude}&current_weather=true`,
+    );
+    const data: WeatherDataAPIResponse = await response.json();
+    setWeather(data);
+  };
 
   useEffect(() => {
-    let ignore = false;
-
-    const fetchWeather = async () => {
-      try {
-        const response = await fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${city.latitude}&longitude=${city.longitude}&current_weather=true`,
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch weather data");
-        }
-
-        const data: WeatherDataAPIResponse = await response.json();
-
-        if (!ignore) {
-          setWeatherData(data);
-        }
-      } catch (error) {
-        if (!ignore) {
-          console.error("Error fetching weather:", error);
-        }
-      }
-    };
-
     fetchWeather();
-
-    return () => {
-      ignore = true;
-    };
-  }, [city.latitude, city.longitude]);
-
+  }, [city.updatedAt]);
   return (
     <div className="flex flex-col gap-2 border border-gray-300 rounded-md p-2">
       <h1>
@@ -58,9 +35,13 @@ function WeatherCard({ city }: { city: CityData }) {
           : "Loading weather..."}{" "}
         {weather ? getWeatherCodeIcon(weather.current_weather.weathercode) : ""}
       </p>
+
       <p className="text-sm border border-gray-300 rounded-md p-2">
         Wind: {weather ? weather.current_weather.windspeed : "--"}{" "}
         {weather?.current_weather_units.windspeed ?? ""}
+      </p>
+      <p className="text-sm">
+        Last Updated at: {city.updatedAt.toLocaleString()}
       </p>
     </div>
   );
